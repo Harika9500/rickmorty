@@ -1,0 +1,78 @@
+import React, { useState, useEffect } from 'react';
+import { Card, List, Select, Input, Pagination } from 'antd';
+import axios from 'axios';
+
+const { Option } = Select;
+
+const Character = ({ name, image, status }) => (
+  <Card title={name} style={{ width: 200, margin: '10px' }}>
+    <img src={image} alt={name} style={{ maxWidth: '100%', height: 'auto' }} />
+    <p style={{ margin: 0, paddingTop: '8px' }}>Status: {status}</p>
+  </Card>
+);
+
+const CharacterList = () => {
+  const [characters, setCharacters] = useState([]);
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [nameFilter, setNameFilter] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 20; // Number of characters per page
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await axios.get(`https://rickandmortyapi.com/api/character?page=${currentPage}`);
+        setCharacters(response.data.results);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      }
+    };
+
+    fetchData();
+  }, [currentPage]);
+
+  const filteredCharacters = characters
+    .filter((character) => (statusFilter === 'all' ? true : character.status === statusFilter))
+    .filter((character) => character.name.toLowerCase().includes(nameFilter.toLowerCase()));
+
+  return (
+    <div style={{ margin: '20px' }}>
+      <div style={{ marginBottom: 16 }}>
+        <Input
+          placeholder="Filter by name"
+          value={nameFilter}
+          onChange={(e) => setNameFilter(e.target.value)}
+        />
+        <Select
+          style={{ width: 120, marginLeft: 16 }}
+          placeholder="Filter by status"
+          value={statusFilter}
+          onChange={(value) => setStatusFilter(value)}
+        >
+          <Option value="all">All</Option>
+          <Option value="alive">Alive</Option>
+          <Option value="dead">Dead</Option>
+        </Select>
+      </div>
+      <List
+        grid={{ gutter: 16, column: 3 }}
+        dataSource={filteredCharacters}
+        renderItem={(character) => (
+          <List.Item>
+            <Character name={character.name} image={character.image} status={character.status} />
+          </List.Item>
+        )}
+      />
+      <div style={{ textAlign: 'center', marginTop: '16px' }}>
+        <Pagination
+          current={currentPage}
+          total={characters.length}
+          pageSize={pageSize}
+          onChange={(page) => setCurrentPage(page)}
+        />
+      </div>
+    </div>
+  );
+};
+
+export default CharacterList;
